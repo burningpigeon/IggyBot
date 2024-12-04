@@ -7,3 +7,4 @@ SOTC's bot for submitting herbs and prey and eventually some misc staff stuff
 3. Enter the repo on your terminal( a combo of `cd` and `ls -al` will get you there) and run `pip install pipreqs`
 4. Do python iggyBot.py and if it runs without errors you are good.
   
+**NOTE:** The other file you need for the google API access and the bot token are in #techinal in the thread "prey/herb submission bot" in the pins
