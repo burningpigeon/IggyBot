@@ -2,6 +2,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
+import pytz
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -20,15 +21,14 @@ intents = discord.Intents.default()
 bot = discord.Bot()
 
 #Handles the IO for Google Sheets
-sheetTest = client.open("IggyBot Test").sheet1
-tcPreyBackend = client.open("Copy of ThunderClan Prey").sheet1
-scPreyBackend = client.open("IggyBot Test").sheet1
-rcPreyBackend = client.open("IggyBot Test").sheet1
-wcPreyBackend = client.open("IggyBot Test").sheet1
-tcHerbBackend = client.open("Copy of ThunderClan Herb Storage Backend").sheet1
-scHerbBackend = client.open("IggyBot Test").sheet1
-rcHerbBackend = client.open("IggyBot Test").sheet1
-wcHerbBackend = client.open("IggyBot Test").sheet1
+tcPreyBackend = client.open("ThunderClan Prey").sheet1
+scPreyBackend = client.open("ShadowClan Prey").sheet1
+rcPreyBackend = client.open("RiverClan Prey").sheet1
+wcPreyBackend = client.open("WindClan Prey").sheet1
+tcHerbBackend = client.open("ThunderClan Herb Storage Backend").sheet1
+scHerbBackend = client.open("ShadowClan Herb Storage Backend").sheet1
+rcHerbBackend = client.open("RiverClan Herb Storage Backend").sheet1
+wcHerbBackend = client.open("WindClan Herb Storage Backend").sheet1
 
 # For debuging: Prints all of the spreadsheets IggyBot has access to
 print("Accessible spreadsheets:")
@@ -36,14 +36,14 @@ for spreadsheet in client.openall():
     print(spreadsheet.title)
 
 # ---- Variables ----
-herbArr = {"alder-bark", "borage", "burdock root", "burnet", "catmint", "cobwebs", "comfrey", "curly dock", "eyebright", "feverfew", "geranium", "lavender", "marigold","poppy seeds", "sea buckthorn", "tansy","wild garlic", "willow bark", "yarrrow"}
+herbArr = {"alder bark", "borage", "burdock root", "burnet", "catmint", "cobwebs", "comfrey", "curly dock", "eyebright", "feverfew", "geranium", "lavender", "marigold","poppy seeds", "sea buckthorn", "tansy","wild garlic", "willow bark", "yarrow"}
 waterPreyArr = {"minnow", "bitterling", "crayfish", "guppy", "loach", "eel", "carp", "goldfish", "chub", "barbel"}
 wetlandPreyArr = {"newt", "frog", "salamander", "gull", "moorhen", "mallard", "beaver", "dace", "bittern", "godwit"}
 airPreyArr = {"wren", "robin", "warbler", "lark", "plover", "kingfisher", "pigeon", "starling", "dove", "sparrow"}
 landPreyArr = {"hedgehog", "vole", "mole", "shrew", "rabbit", "toad", "snake", "beetles", "crickets", "rat"}
-foliagePreyArr = {"woodpecker", "red-squirrel", "chipmunk", "mouse", "lizard", "grey-squirrel", "grey squirrel", "bats", "bat", "pine-marten", "pine marten", "snake", "stoat", "red squirrel"}
+foliagePreyArr = {"woodpecker", "chipmunk", "mouse", "lizard", "grey squirrel", "bats", "pine marten", "snake", "stoat", "red squirrel"}
 cavePreyArr = {"bats", "vole", "mole", "worm", "rabbit", "frog", "snail", "polecat", "lizard", "mouse"}
-valid_sizes = {"1", "2", "4"}
+valid_sizes = {"1", "2", "4", "8"}
 categories = {"water", "wetland", "air", "land", "foliage","cave"}
 
 # ---- Helper Methods ----
@@ -87,33 +87,33 @@ def format(wordIn):
 
     #handles the edge cases for spelling herb/prey type (i.e makes willowbark = Willow Bark or gray-squirrel = Grey Squirrel)
     if wordIn == "alderbark" or wordIn == "alder-bark":
-        formatted == "Alder Bark"
+        formatted = "Alder Bark"
     elif wordIn == "cobweb":
-        formatted == "Cobwebs"
+        formatted = "Cobwebs"
     elif wordIn == "burdockroot" or wordIn == "burdock-root":
-        formatted == "Burdock Root"
+        formatted = "Burdock Root"
     elif wordIn == "curlydock" or wordIn == "curly-dock":
-        formatted == "Curly Dock"
+        formatted = "Curly Dock"
     elif wordIn == "poppyseeds" or wordIn == "poppyseed" or wordIn == "poppy-seeds" or wordIn == "poppy-seed":
-        formatted == "Poppy Seeds"
+        formatted = "Poppy Seeds"
     elif wordIn == "seabuckthorn" or wordIn == "sea-buckthorn":
-        formatted == "Sea Buckthorn"
+        formatted = "Sea Buckthorn"
     elif wordIn == "wildgarlic" or wordIn == "wild-garlic":
         formatted = "Wild Garlic"
     elif wordIn == "willowbark" or wordIn == "willow-bark":
-        formatted == "Willow Bark"
+        formatted = "Willow Bark"
     elif wordIn == "bat":
-        formatted == "Bats"
+        formatted = "Bats"
     elif wordIn == "beetle":
-        formatted == "Beetles"
+        formatted = "Beetles"
     elif wordIn == "cricket":
-        formatted == "Crickets"
+        formatted = "Crickets"
     elif wordIn == "greysquirrel" or wordIn == "graysquirrel" or wordIn == "grey-squirrel" or wordIn == "gray-squirrel":
-        formatted == "Grey Squirrel"
+        formatted = "Grey Squirrel"
     elif wordIn == "pinemarten" or wordIn == "pine-marten":
-        formatted == "Pine Marten"
+        formatted = "Pine Marten"
     elif wordIn == "redsquirrel" or wordIn == "red-squirrel":
-        formatted == "Red Squirrel"
+        formatted = "Red Squirrel"
     else:
         formatted = wordIn.title()
     return formatted
@@ -145,7 +145,7 @@ async def process_prey_submission(ctx, name, category, prey_type, size, backend)
         if category not in categories:
             category = capitalize(category)
             await ctx.respond(f"{ctx.author.mention} :meat_on_bone:  **Freshkill Pile Submission** :meat_on_bone: ```Whoops! {category} isn't a valid category. Please try again.```")
-        
+            return
         # Checks to make sure the prey being submitted is a valid prey in the category.
         prey_type = format(prey_type)
         is_valid = checkCategoryPrey(category, prey_type)
@@ -156,12 +156,12 @@ async def process_prey_submission(ctx, name, category, prey_type, size, backend)
 
         # checks to make sure the prey sizes are correct
         if size not in valid_sizes:
-            await ctx.respond(f"{ctx.author.mention} :meat_on_bone:  **Freshkill Pile Submission** :meat_on_bone: ```Whoops! Size must be 1,2 or 4. Please try again.```")
+            await ctx.respond(f"{ctx.author.mention} :meat_on_bone:  **Freshkill Pile Submission** :meat_on_bone: ```Whoops! Size must be 1,2,4 or . Please try again.```")
             return
 
-        # gets the current time and adds to the submission
-        # TO DO: Make this time server time
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # gets the current time in EST and adds to the submission
+        est = pytz.timezone('US/Eastern')
+        timestamp = datetime.now(est).strftime("%Y-%m-%d %H:%M:%S")
 
         # handles formatting for the backend code
         name = format(name)
@@ -169,7 +169,7 @@ async def process_prey_submission(ctx, name, category, prey_type, size, backend)
 
         # Adds to the backend
         backend.append_row([timestamp, name, category, prey_type, size])
-        await ctx.respond(f"{ctx.author.mention} :meat_on_bone:  **Freshkill Pile Submission** :meat_on_bone: ``` Successfully added {name}'s {prey_type} to the freshkill pile!```")
+        await ctx.respond(f"{ctx.author.mention} :meat_on_bone:  **Freshkill Pile Submission** :meat_on_bone: ```Successfully added {name}'s {prey_type} to the freshkill pile!```")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -185,7 +185,7 @@ async def process_herb_addition(ctx, name, herb_type, amount, backend):
     # backend: which backend the submission will be written to
     try:
         # does the error handing to make sure the herb submiited is an actual herb
-        herb_type = format(herb_type)
+        herb_type = format(herb_type).strip().lower()
         is_valid = checkType(herbArr, herb_type)
 
         if not is_valid:
@@ -193,9 +193,9 @@ async def process_herb_addition(ctx, name, herb_type, amount, backend):
             await ctx.respond(f"{ctx.author.mention} :herb: **Herb Storage Submission** :herb: ```Whoops! {herb_type} isn't an herb! Please try again.```")
             return
 
-        # gets the current time and adds to the submission
-        # TO DO: Make this time server time
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # gets the current time in EST and adds to the submission
+        est = pytz.timezone('US/Eastern')
+        timestamp = datetime.now(est).strftime("%Y-%m-%d %H:%M:%S")
 
         # handles formatting for the backend code
         herb_type = format(herb_type)
@@ -220,7 +220,7 @@ async def process_herb_removal(ctx, name, herb_type, amount, backend):
     try:
        
         # does the error handing to make sure the herb submiited is an actual herb
-        herb_type = format(herb_type)
+        herb_type = format(herb_type).strip().lower()
         is_valid = checkType(herbArr, herb_type)
 
         if not is_valid:
@@ -228,9 +228,9 @@ async def process_herb_removal(ctx, name, herb_type, amount, backend):
             await ctx.respond(f"{ctx.author.mention} :herb: **Herb Storage Submission** :herb: ```Whoops! {herb_type} isn't an herb! Please try again.```")
             return
 
-        # gets the current time and adds to the submission
-        # TO DO: Make this time server time
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # gets the current time in EST and adds to the submission
+        est = pytz.timezone('US/Eastern')
+        timestamp = datetime.now(est).strftime("%Y-%m-%d %H:%M:%S")
 
         # handles formatting for the backend code
         herb_type = format(herb_type)
@@ -295,5 +295,6 @@ async def rc_herbs(ctx, name: str, herb_type: str, amount: int):
 @bot.slash_command(name="wc-remove-herbs", description="Submits from WC's herb stores")
 async def wc_herbs(ctx, name: str, herb_type: str, amount: int):
     await process_herb_removal(ctx, name, herb_type, amount, wcHerbBackend)
+
 # Run the Bot
-bot.run("TOKEN") # See SOTC channel
+bot.run("token")
