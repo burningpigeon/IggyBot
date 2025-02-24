@@ -11,7 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # NOTE: The below line would need to be done if I/Pidge were to leave staff/the server, see documentation on how to set up the Google Sheets API
-json_file_path = os.path.join(script_dir, "extreme-ratio-443023-e1-e5b0be894908.json")
+json_file_path = os.path.join(script_dir, "extreme-ratio-443023-e1-57fff1ff9ae4.json")
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name(json_file_path, scope)
 client = gspread.authorize(creds)
@@ -25,10 +25,22 @@ tcPreyBackend = client.open("ThunderClan Prey").sheet1
 scPreyBackend = client.open("ShadowClan Prey").sheet1
 rcPreyBackend = client.open("RiverClan Prey").sheet1
 wcPreyBackend = client.open("WindClan Prey").sheet1
+
 tcHerbBackend = client.open("ThunderClan Herb Storage Backend").sheet1
 scHerbBackend = client.open("ShadowClan Herb Storage Backend").sheet1
 rcHerbBackend = client.open("RiverClan Herb Storage Backend").sheet1
-wcHerbBackend = client.open("WindClan Herb Storage Backend").sheet1
+wcHerbBackend = client.open("WindClan Herb Storage Backend").sheet1 
+
+tcHerbBackend2 = client.open("ThunderClan Herb Storage Backend")
+scHerbBackend2 = client.open("ShadowClan Herb Storage Backend")
+rcHerbBackend2 = client.open("RiverClan Herb Storage Backend")
+wcHerbBackend2 = client.open("WindClan Herb Storage Backend")
+
+tcHerbFrontend = tcHerbBackend2.worksheet("Front End")
+scHerbFrontend = scHerbBackend2.worksheet("Frontend")
+rcHerbFrontend = rcHerbBackend2.worksheet("Frontend")
+wcHerbFrontend = wcHerbBackend2.worksheet("Frontend")
+
 
 # For debuging: Prints all of the spreadsheets IggyBot has access to
 print("Accessible spreadsheets:")
@@ -46,7 +58,16 @@ cavePreyArr = {"bats", "vole", "mole", "worm", "rabbit", "frog", "snail", "polec
 valid_sizes = {"1", "2", "4", "8"}
 categories = {"water", "wetland", "air", "land", "foliage","cave"}
 
+cell = "P4"
+
+tc = "ThunderClan"
+sc = "ShadowClan"
+wc = "WindClan"
+rc = "RiverClan"
+
+
 # ---- Helper Methods ----
+
 
 # Iternates through the selected prey/herb array and returns true of the prey/herb is in the array and false if not.
 def checkType(arrIn, typeIn):
@@ -65,6 +86,7 @@ def checkCategoryPrey(categoryIn, preyTypeIn):
 
     categoryIn = categoryIn.strip().lower() # handles case senstivities for categories. Makes Land = land for example.
     preyTypeIn = preyTypeIn.strip().lower() # handles case senstivities for prey. Makes Minnow = minnow for example.
+
     is_valid_type = False
     if categoryIn == "land":
         is_valid_type = checkType(landPreyArr, preyTypeIn)
@@ -80,7 +102,6 @@ def checkCategoryPrey(categoryIn, preyTypeIn):
         is_valid_type = checkType(cavePreyArr, preyTypeIn)
     return is_valid_type
 
-# Ensures the formatting is correct for the Sheets Backends
 def format(wordIn):
     # wordIn: The word that we want to format
     wordIn = wordIn.strip().lower()  # Handle case sensitivity
@@ -246,11 +267,115 @@ async def process_herb_removal(ctx, name, herb_type, amount, backend):
         print(f"Error: {e}")
         await ctx.respond(f"{ctx.author.mention} :herb: **Herb Storage Submission** :herb: ```Oh no! Something went wrong. Please try again.```")
 
+async def get_prey_count(ctx, backend, cell, clan):
+    # ctx: Contains information about the slash command invocation, like which user issued it and in what channel
+    # backend: which backend the submission will be written to
+    # cell: the cell where the total prey count is found
+    # clan: which clan we are getting the prey count for
+
+    preyCount = backend.acell(cell).value
+    preyCount = int(preyCount)
+
+    if preyCount>= 25:
+        await ctx.respond(f"{ctx.author.mention} :meat_on_bone: **Total Prey Gathered** :meat_on_bone: ```Woo Hoo! {clan} currently has {preyCount}/25 prey. Prey requirements have been met!```")
+    else:
+        preyNeeded = 25 - preyCount
+        await ctx.respond(f"{ctx.author.mention} :meat_on_bone: **Total Prey Gathered** :meat_on_bone: ```{clan} currently has {preyCount}/25 prey. You've need {preyNeeded} pieces of prey to make prey requirements. Time to go hunting!```")
+
+async def get_herb_amounts(ctx, backend, clan):
+    # ctx: contains information about the slash command invocation, like which user issued it and in what channel
+    # backend: which backend the submisssion will be read from
+    # clan: which clan are we getting the herb count for 
+
+    alderBarkCount = backend.acell("B3").value
+    borageCount = backend.acell("B4").value
+    burdockRootCount = backend.acell("B5").value
+    burnetCount = backend.acell("B6").value
+    catmintCount = backend.acell("B7").value
+    cobwebsCount = backend.acell("B8").value
+    comfreyCount = backend.acell("B9").value
+    curlyDockCount = backend.acell("B10").value
+    eyebrightCount = backend.acell("B11").value
+    feverfewCount= backend.acell("B12").value
+    geraniumCount = backend.acell("B13").value
+    lavenderCount = backend.acell("B14").value
+    marigoldCount = backend.acell("B15").value
+    poppySeedsCount = backend.acell("B16").value
+    seaBuckthornCount = backend.acell("B17").value
+    tansyCount = backend.acell("B18").value
+    wildGarlicCount = backend.acell("B19").value
+    willowBarkCount = backend.acell("B20").value
+    yarrowCount = backend.acell("B21").value
+
+    herb_storage = (
+        f"```"
+        f"Alder Bark: {alderBarkCount}\n"
+        f"Borage: {borageCount}\n"
+        f"Burdock Root: {burdockRootCount}\n"
+        f"Burnet: {burnetCount}\n"
+        f"Catmint: {catmintCount}\n"
+        f"Cobwebs: {cobwebsCount}\n"
+        f"Comfrey: {comfreyCount}\n"
+        f"Curly Dock: {curlyDockCount}\n"
+        f"Eyebright: {eyebrightCount}\n"
+        f"Feverfew: {feverfewCount}\n"
+        f"Geranium: {geraniumCount}\n"
+        f"Lavender: {lavenderCount}\n"
+        f"Marigold: {marigoldCount}\n"
+        f"Poppy Seeds: {poppySeedsCount}\n"
+        f"Sea Buckthorn: {seaBuckthornCount}\n"
+        f"Tansy: {tansyCount}\n"
+        f"Wild Garlic: {wildGarlicCount}\n"
+        f"Willow Bark: {willowBarkCount}\n"
+        f"Yarrow: {yarrowCount}```"
+    )
+
+    await ctx.respond(f"{ctx.author.mention} :herb: **{clan} Herb Storage** :herb:\n{herb_storage}")
+
+async def herb_search(ctx, backend, herbIn, clan):
+
+    # does the error handing to make sure the herb submiited is an actual herb
+    herbIn = format(herbIn).strip().lower()
+    is_valid = checkType(herbArr, herbIn)
+
+
+    if not is_valid:
+            herbIn = capitalize(herbIn)
+            await ctx.respond(f"{ctx.author.mention} :herb: **{clan} Herb Storage** :herb: ```Whoops! {herbIn} isn't an herb! Please try again.```")
+            return
+
+    herbIn = capitalize(herbIn)
+
+    row = []
+    data = backend.col_values(1)[2:21]
+    for i, cell in enumerate(data, start =3):
+        if cell == herbIn:
+            row = backend.row_values(i)
+            break
+
+    if row:
+        await ctx.respond(f"{ctx.author.mention} :herb: **{clan} Herb Search - {row[0]}** :herb:"
+            f"```Herb: {row[0]}\n"
+            f"Amount: {row[1]}\n"
+            f"Usage: {row[2]}\n"
+            f"Locations: {row[3]}\n"
+            f"```Rarity\n"
+            f"   - Newleaf:   {row[4]}\n"
+            f"   - Greenleaf: {row[5]}\n"
+            f"   - Leaffall:  {row[6]}\n"
+            f"   - Leafbare:  {row[7]}```"
+        )   
+    else:
+        await ctx.respond(f"{ctx.author.mention} :herb: **{clan} Herb Search: {herbIn}** :herb: ```Whoops! We couldn't find {herbIn}! Please try again.```")
+
+
 # --- COMMANDS ----
+
+# add prey commands
 
 @bot.slash_command(name="tc-add-prey", description="Submits to TC's freshkill pile")
 async def tc_add_prey(ctx, name: str, category: str, prey_type: str, size: str):
-    await process_prey_submission(ctx, name, category, prey_type, size, tcPreyBackend)
+    await get_prey_count(ctx, name, category, prey_type, size, tcPreyBackend)
 
 @bot.slash_command(name="sc-add-prey", description="Submits to SC's freshkill pile")
 async def sc_add_prey(ctx, name: str, category: str, prey_type: str, size: str):
@@ -263,6 +388,8 @@ async def rc_add_prey(ctx, name: str, category: str, prey_type: str, size: str):
 @bot.slash_command(name="wc-add-prey", description="Submits to WC's freshkill pile")
 async def wc_add_prey(ctx, name: str, category: str, prey_type: str, size: str):
     await process_prey_submission(ctx, name, category, prey_type, size, wcPreyBackend)
+
+# add and remove herb commands
 
 @bot.slash_command(name="tc-add-herbs", description="Submits to TC's herb stores")
 async def tc_herbs(ctx, name: str, herb_type: str, amount: int):
@@ -295,6 +422,60 @@ async def rc_herbs(ctx, name: str, herb_type: str, amount: int):
 @bot.slash_command(name="wc-remove-herbs", description="Submits from WC's herb stores")
 async def wc_herbs(ctx, name: str, herb_type: str, amount: int):
     await process_herb_removal(ctx, name, herb_type, amount, wcHerbBackend)
+
+#prey count commands
+
+@bot.slash_command(name="tc-prey-count", description="Shows the total prey gathered for the week")
+async def tc_prey_count(ctx):
+    await get_prey_count(ctx, tcPreyBackend, cell, tc)
+
+@bot.slash_command(name="sc-prey-count", description="Shows the total prey gathered for the week")
+async def sc_prey_count(ctx):
+    await get_prey_count(ctx, scPreyBackend, cell, sc)
+
+@bot.slash_command(name="rc-prey-count", description="Shows the total prey gathered for the week")
+async def rc_prey_count(ctx):
+    await get_prey_count(ctx, rcPreyBackend, cell, rc)
+
+@bot.slash_command(name="wc-prey-count", description="Shows the total prey gathered for the week")
+async def wc_prey_count(ctx):
+    await get_prey_count(ctx, wcPreyBackend, cell, wc)
+
+#herb storage commands
+
+@bot.slash_command(name="tc-herb-storage", description="Shows the total herbs in ThunderClan herb stores")
+async def tc_herb_storage(ctx):
+    await get_herb_amounts(ctx, tcHerbFrontend, tc)
+
+@bot.slash_command(name="sc-herb-storage", description="Shows the total herbs in ShadowClan herb stores")
+async def sc_herb_storage(ctx):
+    await get_herb_amounts(ctx, scHerbFrontend, sc)
+
+@bot.slash_command(name="rc-herb-storage", description="Shows the total herbs in RiverClan herb stores")
+async def rc_herb_storage(ctx):
+    await get_herb_amounts(ctx, rcHerbFrontend, rc)
+
+@bot.slash_command(name="wc-herb-storage", description="Shows the total herbs in WindClan herb stores")
+async def wc_herb_storage(ctx):
+    await get_herb_amounts(ctx, wcHerbFrontend, wc)
+
+# herb search commands
+
+@bot.slash_command(name="tc-herb-search", description="Search up the information regarding a certain herb.")
+async def tc_herb_search(ctx, herb: str):
+    await herb_search(ctx, tcHerbFrontend, herb, tc)
+
+@bot.slash_command(name="sc-herb-search", description="Search up the information regarding a certain herb.")
+async def sc_herb_search(ctx, herb: str):
+    await herb_search(ctx, scHerbFrontend, herb, sc)
+
+@bot.slash_command(name="rc-herb-search", description="Search up the information regarding a certain herb.")
+async def rc_herb_search(ctx, herb: str):
+    await herb_search(ctx, rcHerbFrontend, herb, rc)
+
+@bot.slash_command(name="wc-herb-search", description="Search up the information regarding a certain herb.")
+async def wc_herb_search(ctx, herb: str):
+    await herb_search(ctx, wcHerbFrontend, herb, wc)
 
 # Run the Bot
 bot.run("token")
