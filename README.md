@@ -21,3 +21,5 @@ If access to the service account is gone then just watch from the start. The vid
 5. Do python iggyBot.py and if it runs without errors you are good.
   
 **NOTE:** The other file you need for the google API access and the bot token are in #techinal in the thread "prey/herb submission bot" in the pins
+
+https://docs.google.com/document/d/1XDTgs8LkHStqlmMvqYTzX5OGDCn8L2c9AYFOk7-p7F0/edit?usp=sharing
